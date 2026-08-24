@@ -1,0 +1,16 @@
+Micro-ondas 
+
+Atributos:
+    - potência : int
+    - ligado/desligado : bool
+    - temperatura máxima : int
+    - modelo : string
+    - porta aberta/fechada : bool
+    - timer : int
+
+    + set_timer() : int
+    + set_ligado() : bool
+    + get_potencia() : int
+    + get_moidelo() : string
+    + get_
+    + get_
