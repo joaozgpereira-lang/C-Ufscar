@@ -1,16 +1,27 @@
-Micro-ondas 
+-----------------------------------------
+|              MicroOndas               |
+-----------------------------------------
+| - modelo : string                     |
+| - potenciaMaxima : int                |
+| - potenciaAtual : int                 |
+| - tempo : int                         |
+| - estaLigado : bool                   |
+| - portaAberta : bool                  |
+-----------------------------------------
+| + ligar() : void                      |
+| + desligar() : void                   |
+| + abrirPorta() : void                 |
+| + fecharPorta() : void                |
+| + setTempo(segundos : int) : void     |
+| + setPotencia(nivel : int) : void     |
+| + getModelo() : string                |
+| + getTempo() : int                    |
+| + getPotencia() : int                 |
+-----------------------------------------
 
-Atributos:
-    - potência : int
-    - ligado/desligado : bool
-    - temperatura máxima : int
-    - modelo : string
-    - porta aberta/fechada : bool
-    - timer : int
-
-    + set_timer() : int
-    + set_ligado() : bool
-    + get_potencia() : int
-    + get_moidelo() : string
-    + get_
-    + get_
+/* 
+    Em objetos temos características (Atributos) e ações (Métodos)
+    EX: Carrinho
+        Atributos: cor, marca, ligado/desligado...
+        Métodos: ir pra frente/trás, ligar/desligar...
+*/
