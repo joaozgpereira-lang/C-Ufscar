@@ -1,72 +1,104 @@
-#include <iostream>
+/*
 
+Integrantes: João Zavaglia Gâmbaro Pereira - 859425
+Luigi Barbazia e Silva - 845686
+
+Imagem do microondas utilizado no projeto: https://imgur.com/a/fEnMxlb
+
+*/
+
+#include <iostream>
 using namespace std;
 
-const int MAX = 10; // Tamnaho máximo da pilha = 10
 
-typedef struct {
-    int itens[MAX] = {0};
-    int top = 0;
+class Microondas {
+    private:
+        string modelo;
+        int PotenciaMax;
+        int tempo;
+        bool Ligado;
+        bool Porta;
+    
+    public:
+        Microondas(string nome, int potmax) {
+            modelo = nome;
+            PotenciaMax = potmax;
+            Ligado = 0;
+            Porta = 0;
+            tempo = 0;
+        }
 
-    void Empilha(int num) {
-        if(!(top == MAX)) {
-            itens[top] = num;
-            top++;
+        void Ligar() {
+           if(Porta) {
+                cout << "Impossível ligar, porta aberta!\n";
+            }
+            else {
+                Ligado = 1;
+                cout << "Ligou!" << endl;
+            }
         }
-        else {
-            cout << "Pilha cheia, impossível empilhar!" << endl;
-        }
-    }
 
-    void Desempilha() {
-        if(top==0) {
-            cout << "Pilha vazia, impossível desempilhar!" << endl;
-        }
-        else {
-            itens[top] = 0;
-            top--;     
+        void Desligar() {
+            Ligado = 0;
+            cout << "Desligou!" << endl;
         }
         
-    }
-
-    bool Vazia() {
-        if(!top) { 
-            return 1;
+        void AbrirFecharPorta() {
+            Porta = !Porta;
+            cout << ((Porta) ? "Porta aberta" : "Porta fechada") << endl;
+            if(Porta == 1 and Ligado == 1) {
+                Desligar();
+            }
         }
-        else {
-            return 0;
+        
+        void SetTempo(int segundos) {
+            if (segundos > 600) {
+                cout << "Tempo inválido, selecione outro tempo: ";
+            }
+            else {
+                tempo = segundos;
+            }
         }
-    }
+        
+        string GetModelo() {
+            return modelo;
+        }
 
-    int Topo() {
-        return itens[top-1];
-    }
+        int GetTempo() {
+            return tempo;
+        }
 
-    int Tamanho() {
-        return top;
-    }
-} Pilha;
+        int GetPotencia() {
+            return PotenciaMax;
+        }
 
+        bool GetPorta() {
+            return Porta;
+        }
+};
 
 int main() {
-    Pilha p1;
-
-    cout << p1.Vazia() << endl; // Deve imprimir 1
-
-    for(int i=0; i<MAX; i++) { // Empilha de 0 a 9
-        p1.Empilha(i);
-    }
-
-    cout << p1.Tamanho() << endl; // Deve imprimir 10
     
-    p1.Empilha(10); // Deve imprimir "Pilha cheia, impossível empilhar!"
+    Microondas Electrolux = Microondas("Electrolux 20l Branco MTO30", 1100);
+    
+    cout << "Exemplo de uso:" << endl;
+    cout << "Modelo: " << Electrolux.GetModelo() << "\nPotência: " << Electrolux.GetPotencia() << "W" << endl;
+    
+    cout << "Abra a porta" << endl;
+    Electrolux.AbrirFecharPorta();
+    
+    Electrolux.SetTempo(180);
+    cout << "Tempo selecionado: " << Electrolux.GetTempo() << " segundos" << endl;
+    
+    cout << "Tenta ligar" << endl;
+    Electrolux.Ligar();
 
-    for(int i=0; i<MAX; i++) { // Desempilha de 9 a 0
-        cout << p1.Topo() << endl;
-        p1.Desempilha();
-    }
+    cout << "Fecha a porta e tenta ligar" << endl;
+    Electrolux.AbrirFecharPorta();
+    Electrolux.Ligar();
 
-    p1.Desempilha(); // Deve imprimir "Pilha vazia, impossível desempilhar!"
+    cout << "Desliga" << endl;
+    Electrolux.Desligar();
 
-    return 0;
+    return 0; 
 }
