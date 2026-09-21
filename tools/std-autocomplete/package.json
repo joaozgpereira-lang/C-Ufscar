@@ -1,0 +1,20 @@
+{
+  "name": "std-autocomplete",
+  "displayName": "std:: Autocomplete",
+  "description": "Completa cout -> std::cout (ou cout puro quando o arquivo usa using namespace std;)",
+  "version": "1.0.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:cpp",
+    "onLanguage:c"
+  ],
+  "main": "./extension.js",
+  "contributes": {}
+}
