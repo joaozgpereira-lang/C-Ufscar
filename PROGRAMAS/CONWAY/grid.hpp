@@ -1,0 +1,21 @@
+#pragma once
+#include <iostream>
+#include <raylib.h>
+#include <random>
+
+class Grid {
+    private: 
+        int quadrado = 8;
+        float largura = 800, altura = 800;
+    public:
+        int grid[100][100];
+        Grid();
+        void Inicializa();
+        void Print();
+        void Copia(int matrizoriginal[][100], int linhasoriginal, int matrizalvo[][100], int linhasalvo);
+        void Desenha();
+        bool Aleatorio();
+        void Inicial();
+        void Atualiza();
+        int Vizinhos(int matriz[][100], int numerolinhas, int linha, int coluna);
+};
