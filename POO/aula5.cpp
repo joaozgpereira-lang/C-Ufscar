@@ -18,6 +18,7 @@ class Pedido {
         int quantidade;
         int NroPedido;
         string* presentes;
+        
     public:
         Pedido(string nome, int quantidade);
         ~Pedido();
