@@ -4,11 +4,11 @@
 #include <random>
 
 class Grid {
-    private: 
+    public:
         int quadrado = 8;
         float largura = 800, altura = 800;
-    public:
         int grid[100][100];
+        int geracao = 0;
         Grid();
         void Inicializa();
         void Print();
@@ -18,4 +18,7 @@ class Grid {
         void Inicial();
         void Atualiza();
         int Vizinhos(int matriz[][100], int numerolinhas, int linha, int coluna);
+        Color CorCelula(int celula);
+        void UpFPS();
+        void DownFPS();
 };
