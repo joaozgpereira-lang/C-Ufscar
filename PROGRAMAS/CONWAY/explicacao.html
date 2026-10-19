@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conway's Game — Código Comentado e Interativo</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel2:#161d29; --line:#232c3b;
+  --txt:#dbe4ef; --muted:#8b98ab; --acc:#39d0d8; --acc2:#ffb454; --red:#ff5d5d;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+code,pre,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+a{color:var(--acc);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* HERO */
+.hero{padding:46px 20px 26px;text-align:center;
+  background:radial-gradient(1000px 400px at 50% -10%, rgba(57,208,216,.18), transparent 70%)}
+.hero h1{margin:0 0 8px;font-size:clamp(26px,4vw,42px);letter-spacing:-.5px}
+.hero h1 span{color:var(--acc)}
+.hero p{margin:6px auto 0;max-width:760px;color:var(--muted)}
+.badge{display:inline-block;margin-top:14px;padding:5px 12px;border:1px solid var(--line);
+  border-radius:999px;background:var(--panel);color:var(--acc2);font-size:13px}
+
+/* NAV */
+nav.toc{position:sticky;top:0;z-index:50;background:rgba(11,15,20,.92);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav.toc div{max-width:1180px;margin:0 auto;padding:9px 16px;display:flex;gap:16px;
+  flex-wrap:wrap;font-size:14px}
+nav.toc a{color:var(--muted)}
+nav.toc a:hover{color:var(--acc);text-decoration:none}
+
+main{max-width:1180px;margin:0 auto;padding:0 20px 70px}
+section{margin-top:52px;scroll-margin-top:64px}
+h2{font-size:26px;margin:0 0 6px;padding-left:12px;border-left:4px solid var(--acc)}
+h2 .n{color:var(--acc2);font-weight:700;margin-right:6px}
+.sub{color:var(--muted);margin:0 0 18px;padding-left:16px}
+h3{font-size:18px;margin:26px 0 10px;color:var(--acc2)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h4{margin:0 0 8px;font-size:16px}
+.card p{margin:0;font-size:14.5px;color:var(--muted)}
+.card .tag{display:inline-block;font-size:12px;color:var(--acc);border:1px solid var(--line);
+  background:#0e141d;border-radius:6px;padding:1px 7px;margin-bottom:8px}
+
+pre.snip{background:#0d131b;border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;overflow:auto;font-size:13.5px;line-height:1.55;color:#c9d5e6}
+pre.snip .c-com{color:#6a9955}pre.snip .c-pre{color:#c586c0}pre.snip .c-str{color:#ce9178}
+pre.snip .c-num{color:#b5cea8}pre.snip .c-kw{color:#569cd6}pre.snip .c-fn{color:#dcdcaa}
+
+/* RULES */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.rule{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;
+  display:flex;gap:14px;align-items:flex-start}
+.rule .ic{width:44px;height:44px;flex:none;border-radius:9px;display:grid;place-items:center;
+  font-size:22px;background:#0e141d;border:1px solid var(--line)}
+.rule h4{margin:0 0 4px;font-size:15.5px}
+.rule p{margin:0;font-size:14px;color:var(--muted)}
+.rule b{color:var(--txt)}
+
+/* PATTERNS */
+.pats{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+.pat{text-align:center}
+.pat canvas{background:#0a0d12;border:1px solid var(--line);border-radius:8px;display:block}
+.pat span{font-size:13px;color:var(--muted);display:block;margin-top:6px}
+
+/* CODE EXPLORER */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{background:var(--panel);border:1px solid var(--line);color:var(--muted);
+  padding:7px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600}
+.tabs button.on{background:#13232b;border-color:var(--acc);color:var(--acc)}
+.code-wrap{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);gap:14px}
+@media(max-width:940px){.code-wrap{grid-template-columns:1fr}}
+.code\boxed{background:#0d131b;border:1px solid var(--line);border-radius:10px;
+  overflow:auto;max-height:600px;font-size:13px;line-height:1.55}
+.cl{display:flex;cursor:pointer;border-left:3px solid transparent}
+.cl:hover{background:#141c28}
+.cl.sel{background:#1c2a3d;border-left-color:var(--acc)}
+.ln{width:46px;flex:none;text-align:right;padding-right:12px;color:#46536a;user-select:none}
+.cl.sel .ln{color:var(--acc);font-weight:700}
+.lc{white-space:pre;padding-right:14px}
+.c-com{color:#6a9955}.c-pre{color:#c586c0}.c-str{color:#ce9178}.c-num{color:#b5cea8}
+.c-kw{color:#569cd6}.c-fn{color:#dcdcaa}
+.note{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;
+  position:sticky;top:64px;align-self:start}
+.note .head{font-size:12px;color:var(--acc2);letter-spacing:.4px;text-transform:uppercase}
+.note h4{margin:6px 0 8px;font-size:15.5px;color:var(--acc)}
+.note p{margin:0;font-size:14.5px;color:#c4cfe0}
+.note p+p{margin-top:9px}
+.hint{font-size:13.5px;color:var(--muted);margin:10px 0 0}
+
+/* SIMULATOR */
+.sim{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+@media(max-width:940px){.sim{grid-template-columns:1fr}}
+canvas.main{width:100%;height:auto;background:#0a0a0a;border:1px solid var(--line);
+  border-radius:10px;display:block;touch-action:none;cursor:crosshair}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.panel h4{margin:0 0 10px;font-size:14px;color:var(--acc2);text-transform:uppercase;letter-spacing:.5px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.btn{background:#13232b;border:1px solid var(--line);color:var(--txt);padding:7px 13px;
+  border-radius:8px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#04222a;font-weight:700}
+.btn.primary:hover{filter:brightness(1.1);color:#04222a}
+.stat{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;
+  border-bottom:1px dashed var(--line)}
+.stat b{color:var(--acc)}
+label.ck{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted);margin:10px 0}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.keys{font-size:13px;color:var(--muted);margin-top:12px}
+.keys kbd{background:#0e141d;border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:5px;padding:1px 6px;font-size:12px;color:var(--txt);font-family:inherit}
+
+/* STEP BY STEP */
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.steps{grid-template-columns:1fr}}
+.steps .col{text-align:center}
+.steps canvas{width:100%;height:auto;background:#0a0d12;border:1px solid var(--line);
+  border-radius:10px;display:block;cursor:pointer}
+.steps .col span{font-size:13.5px;color:var(--muted);display:block;margin-top:7px}
+.msg{background:#0e141d;border:1px solid var(--line);border-left:4px solid var(--acc2);
+  border-radius:8px;padding:12px 14px;font-size:14.5px;margin-top:14px;min-height:64px}
+.msg b{color:var(--acc2)}
+.msg .ok{color:#5ce38a}
+.msg .die{color:var(--red)}
+.log{margin-top:10px;font-size:12.5px;color:var(--muted);max-height:130px;overflow:auto}
+.log div{padding:2px 0;border-bottom:1px dotted #1b2432}
+
+/* NEIGHBOR EXPLORER */
+.nb{display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:760px){.nb{grid-template-columns:1fr}}
+.nbgrid{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(3,64px);gap:6px}
+.nbgrid button{border-radius:10px;border:1px solid var(--line);background:#0e141d;
+  color:var(--muted);cursor:pointer;font-size:22px}
+.nbgrid button.center{background:#13232b;border-color:var(--acc);color:var(--acc);cursor:default}
+.nbgrid button.alive{background:#3a1218;border-color:var(--red);color:var(--red);font-weight:700}
+.count{font-size:40px;font-weight:800;color:var(--acc);line-height:1.1}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;background:var(--panel);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14.5px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{background:#0e141d;color:var(--acc2);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+td kbd{background:#0e141d;border:1px solid var(--line);border-bottom-width:2px;
+  border-radius:5px;padding:1px 7px;font-size:12.5px;font-family:inherit}
+tr:last-child td{border-bottom:none}
+td.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;color:#c9d5e6}
+
+/* QUIRKS */
+.quirk{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--acc2);
+  border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.quirk h4{margin:0 0 6px;font-size:15.5px;color:var(--acc2)}
+.quirk p{margin:0;font-size:14.5px;color:#c4cfe0}
+.quirk code{background:#0e141d;border:1px solid var(--line);border-radius:5px;
+  padding:1px 5px;font-size:13px;color:#ffd08a}
+
+footer{border-top:1px solid var(--line);margin-top:60px;padding:22px 20px 40px;
+  text-align:center;color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Conway's Game <span>&mdash; o código explicado</span></h1>
+  <p>Uma visita guiada e <b>interativa</b> ao seu jogo da vida em C++ e raylib:
+     leia o código com anotações clique a clique, simule o tabuleiro no navegador e
+     acompanhe o algoritmo <code>Atualiza()</code> passo a passo.</p>
+  <div class="badge mono">main.cpp &nbsp;•&nbsp; grid.hpp &nbsp;•&nbsp; grid.cpp</div>
+</header>
+
+<nav class="toc">
+  <div>
+    <a href="#visao">📁 Arquivos</a>
+    <a href="#regras">🧬 Regras</a>
+    <a href="#codigo">💻 Código comentado</a>
+    <a href="#simulador">▶ Simulador</a>
+    <a href="#passo">👣 Passo a passo</a>
+    <a href="#vizinhos">🔢 Vizinhos()</a>
+    <a href="#controles">🎮 Controles</a>
+    <a href="#detalhes">🔍 Detalhes sutis</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ===================== VISÃO GERAL ===================== -->
+<section id="visao">
+  <h2><span class="n">1.</span> Os três arquivos do projeto</h2>
+  <p class="sub">O projeto segue a separação clássica de C++: <b>o que a classe faz</b> fica no cabeçalho,
+     <b>como ela faz</b> fica no arquivo de implementação, e o <code>main.cpp</code> só cuida da janela e dos controles.</p>
+  <div class="cards">
+    <div class="card">
+      <span class="tag">programa</span>
+      <h4>main.cpp — 67 linhas</h4>
+      <p>Cria a janela 800×800, roda o <b>game loop</b> e traduz teclado/mouse em chamadas para a classe
+         <code>Grid</code>. Não contém nenhuma regra do jogo.</p>
+    </div>
+    <div class="card">
+      <span class="tag">cabeçalho (.hpp)</span>
+      <h4>grid.hpp — 24 linhas</h4>
+      <p>Declara a <b>classe Grid</b>: os atributos (<code>grid[100][100]</code>, <code>geracao</code>,
+         <code>quadrado</code>) e os protótipos dos 12 métodos.</p>
+    </div>
+    <div class="card">
+      <span class="tag">implementação (.cpp)</span>
+      <h4>grid.cpp — 134 linhas</h4>
+      <p>O cérebro do jogo: construção, desenho, sorteador aleatório, cópia da matriz e — o mais importante —
+         as regras de Conway em <code>Atualiza()</code> e a contagem em <code>Vizinhos()</code>.</p>
+    </div>
+    <div class="card">
+      <span class="tag">POO</span>
+      <h4>Classe, atributos e métodos</h4>
+      <p><code>Grid</code> é a <b>classe</b>; cada tabuleiro é um <b>objeto</b> (<code>tab</code>).
+         Note que tudo está <code>public:</code> — o <code>main</code> mexe direto em <code>tab.grid[linha][coluna]</code>,
+         ou seja, o encapsulamento ainda não foi aplicado.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== REGRAS ===================== -->
+<section id="regras">
+  <h2><span class="n">2.</span> As regras de Conway (que vivem em <code>Atualiza()</code>)</h2>
+  <p class="sub">Cada célula só olha seus <b>8 vizinhos</b> (regra de Moore) e decide viver ou morrer.
+     Abaixo, o que o seu código faz em cada caso — depois clique em uma linha do código na seção 3 para ver de onde ela veio.</p>
+  <div class="rules">
+    <div class="rule"><div class="ic" style="color:var(--red)">•</div>
+      <div><h4>Solidão — menos de 2 vivos</h4><p><b>Morre.</b> No código: <code>vizinhos &lt; 2</code> → <code>grid[i][j] = 0</code>.</p></div></div>
+    <div class="rule"><div class="ic" style="color:var(--red)">•</div>
+      <div><h4>Superpopulação — mais de 3 vivos</h4><p><b>Morre.</b> No código: <code>vizinhos &gt; 3</code> → <code>grid[i][j] = 0</code>.</p></div></div>
+    <div class="rule"><div class="ic" style="color:#5ce38a">3</div>
+      <div><h4>Reprodução — exatamente 3 vivos</h4><p><b>Nasce</b> (se estava morta). No código: <code>grid[i][j]++</code> (0 vira 1).</p></div></div>
+    <div class="rule"><div class="ic" style="color:#5ce38a">2</div>
+      <div><h4>Sobrevivência — viva com 2 vizinhos</h4><p><b>Continua viva.</b> No código: <code>proxima[i][j] &gt; 0 &amp;&amp; vizinhos == 2</code> → <code>grid[i][j]++</code>.</p></div></div>
+    <div class="rule"><div class="ic" style="color:var(--muted)">2</div>
+      <div><h4>Morta com 2 vizinhos</h4><p><b>Nada acontece</b> — nenhuma <code>if</code> engloba esse caso, então ela permanece com 0 (comportamento correto de Conway).</p></div></div>
+    <div class="rule"><div class="ic" style="color:var(--acc2)">🎨</div>
+      <div><h4>A cor conta a história</h4><p><code>CorCelula()</code> pinta 1 de vermelho, 2 de laranja, 3 de amarelo… Como o código usa <code>++</code> em vez de <code>= 1</code>, quanto <b>mais tempo a célula sobrevive</b>, mais "quente" (e depois mais azul) ela fica.</p></div></div>
+  </div>
+
+  <h3>Padrões clássicos rodando com o <i>seu</i> algoritmo</h3>
+  <p class="sub" style="padding-left:0">Estes mini-tabuleiros executam exatamente as mesmas funções <code>Atualiza()</code> / <code>Vizinhos()</code> reescritas em JavaScript (inclusive a regra da borda):</p>
+  <div class="pats">
+    <div class="pat"><canvas id="pat-glider" width="160" height="160"></canvas><span>Glider (a "espiral")</span></div>
+    <div class="pat"><canvas id="pat-blinker" width="160" height="160"></canvas><span>Blinker (oscilador)</span></div>
+    <div class="pat"><canvas id="pat-block" width="160" height="160"></canvas><span>Block (vida estática)</span></div>
+    <div class="pat"><canvas id="pat-random" width="160" height="160"></canvas><span>Aleatório (tecla R)</span></div>
+  </div>
+</section>
+
+<!-- ===================== CÓDIGO ===================== -->
+<section id="codigo">
+  <h2><span class="n">3.</span> Código comentado — clique em uma linha</h2>
+  <p class="sub">Escolha o arquivo, clique em qualquer linha e a explicação aparece ao lado.</p>
+  <div class="tabs" id="tabs">
+    <button data-f="main" class="on">main.cpp</button>
+    <button data-f="hpp">grid.hpp</button>
+    <button data-f="cpp">grid.cpp</button>
+  </div>
+  <div class="code-wrap">
+    <div class="codebox" id="codebox"></div>
+    <div class="note" id="note">
+      <div class="head">anotação</div>
+      <h4>Clique em uma linha do código 👈</h4>
+      <p>As linhas com anotação ficam com o texto explicando o que aquela parte faz e por quê.</p>
+      <p class="hint">Dica: comece pelas linhas 62–83 do <code>grid.cpp</code> — é ali que acontece o jogo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SIMULADOR ===================== -->
+<section id="simulador">
+  <h2><span class="n">4.</span> Simulador fiel do seu jogo</h2>
+  <p class="sub">Reimplementação do programa original: grade 100×100 de células de 8 px, mesmas cores de
+     <code>CorCelula()</code>, mesmas regras de <code>Atualiza()</code>, contador de geração e limite de FPS.</p>
+  <div class="sim">
+    <canvas class="main" id="sim" width="800" height="800" tabindex="0"></canvas>
+    <div class="panel">
+      <h4>Controles</h4>
+      <div class="btns">
+        <button class="btn primary" id="btn-play">▶ Rodar</button>
+        <button class="btn" id="btn-step">⏭ 1 geração</button>
+        <button class="btn" id="btn-rand">🎲 Aleatório</button>
+        <button class="btn" id="btn-clear">🧽 Zerar</button>
+      </div>
+      <div class="stat"><span>Geração</span><b id="s-gen">0</b></div>
+      <div class="stat"><span>Células vivas</span><b id="s-live">0</b></div>
+      <div class="stat"><span>Limite de FPS</span><b id="s-limit">30</b></div>
+      <div class="stat"><span>FPS medidos</span><b id="s-fps">0</b></div>
+      <label class="ck"><input type="checkbox" id="c-hud" checked> Mostrar HUD (geração + FPS)</label>
+      <label class="ck"><input type="checkbox" id="c-borda"> Realçar as bordas (sempre morrem)</label>
+      <div style="margin-top:8px">
+        <div style="font-size:13px;color:var(--muted)">Velocidade (SetTargetFPS)</div>
+        <input type="range" id="r-fps" min="1" max="60" value="30">
+      </div>
+      <div class="keys">
+        <p style="margin:8px 0 4px">Atalhos (clique no tabuleiro antes):</p>
+        <kbd>espaço</kbd> pausa • <kbd>R</kbd> aleatório • <kbd>B</kbd> zerar •
+        <kbd>→</kbd> 1 passo • <kbd>↑</kbd> avanço rápido • <kbd>G</kbd> turbo • <kbd>S</kbd>/<kbd>D</kbd> −/+ FPS
+      </div>
+    </div>
+  </div>
+  <p class="hint" style="padding-left:0">🖱️ Botão esquerdo = pintar célula viva &nbsp;|&nbsp; botão direito = apagar
+     (igual ao <code>main.cpp</code>, linhas 44–55).</p>
+</section>
+
+<!-- ===================== PASSO A PASSO ===================== -->
+<section id="passo">
+  <h2><span class="n">5.</span> <code>Atualiza()</code> passo a passo</h2>
+  <p class="sub">O algoritmo inteiro, uma linha de raciocínio por vez, em um tabuleiro 6×6 editável
+     (clique nas células para montar seu próprio caso).</p>
+  <div class="btns" id="walk-btns">
+    <button class="btn primary" id="w-next">👉 Próximo passo</button>
+    <button class="btn" id="w-reset">↺ Reiniciar</button>
+    <button class="btn" data-pat="glider">Glider</button>
+    <button class="btn" data-pat="blinker">Blinker</button>
+    <button class="btn" data-pat="random">Aleatório</button>
+    <button class="btn" data-pat="clear">Limpar</button>
+  </div>
+  <div class="steps">
+    <div class="col"><canvas id="w-grid" width="264" height="264"></canvas>
+      <span><code>grid[]</code> — sendo atualizado</span></div>
+    <div class="col"><canvas id="w-snap" width="264" height="264"></canvas>
+      <span><code>proxima[]</code> — snapshot (o que existia antes)</span></div>
+  </div>
+  <div class="msg" id="w-msg">Clique em <b>👉 Próximo passo</b>. O primeiro passo é o <code>Copia(grid, 100, proxima, 100)</code> — sem ele, mudanças de uma célula seriam lidas como vizinhas das outras.</div>
+  <div class="log" id="w-log"></div>
+</section>
+
+<!-- ===================== VIZINHOS ===================== -->
+<section id="vizinhos">
+  <h2><span class="n">6.</span> Explorador de <code>Vizinhos()</code></h2>
+  <p class="sub">Clique nos 8 vizinhos para ligar/desligar e veja o que a função devolveria. Marque a opção de
+     "borda" para descobrir o efeito do <code>if</code> da linha 87.</p>
+  <div class="nb">
+    <div>
+      <div class="nbgrid" id="nbgrid">
+        <button data-k="0"></button><button data-k="1"></button><button data-k="2"></button>
+        <button data-k="3"></button><button class="center" disabled title="a célula analisada">●</button><button data-k="5"></button>
+        <button data-k="6"></button><button data-k="7"></button><button data-k="8"></button>
+      </div>
+      <label class="ck"><input type="checkbox" id="nb-borda"> A célula está na borda da matriz</label>
+      <div style="margin-top:6px;font-size:13px;color:var(--muted)">Vizinhos() devolve:</div>
+      <div class="count" id="nb-count">0</div>
+      <div id="nb-verdict" style="font-size:14.5px"></div>
+    </div>
+    <div>
+      <pre class="snip" id="nb-code"></pre>
+      <p class="hint">A proteção <code>!(linha-1&lt;0 or linha+1&gt;99 or ...)</code> existe para <b>não estourar os índices</b>
+         da matriz, mas tem um efeito colateral: quando a célula <i>está</i> na borda, o bloco inteiro é pulado e a função
+         devolve <b>0</b> — o que significa que, segundo as regras, <b>toda célula de borda morre de solidão na próxima geração</b>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONTROLES ===================== -->
+<section id="controles">
+  <h2><span class="n">7.</span> Mapa de controles (como escrito no <code>main.cpp</code>)</h2>
+  <p class="sub">Cada linha da tabela corresponde a um trecho do game loop.</p>
+  <table>
+    <tr><th>Tecla / Mouse</th><th>Efeito</th><th>Código no main.cpp</th></tr>
+    <tr><td><kbd>espaço</kbd></td><td>Pausa / retoma a simulação (começa pausado)</td><td class="mono">pause = IsKeyPressed(KEY_SPACE) ? !pause : pause;</td></tr>
+    <tr><td><kbd>R</kbd></td><td>Tabuleiro aleatório novo (geração volta a 0)</td><td class="mono">tab.Inicial();</td></tr>
+    <tr><td><kbd>B</kbd></td><td>Tabuleiro zerado (tudo morto)</td><td class="mono">tab.Inicializa();</td></tr>
+    <tr><td><kbd>→</kbd></td><td>Avança exatamente 1 geração</td><td class="mono">tab.Atualiza();</td></tr>
+    <tr><td><kbd>↑</kbd></td><td>Avanço rápido: atualiza a cada quadro <i>enquanto segurada</i></td><td class="mono">if (IsKeyDown(KEY_UP)) tab.Atualiza();</td></tr>
+    <tr><td><kbd>D</kbd> / <kbd>S</kbd></td><td>Sobe / desce 10 FPS (enquanto seguradas)</td><td class="mono">tab.UpFPS(); / tab.DownFPS();</td></tr>
+    <tr><td><kbd>3</kbd></td><td>Volta o limite para 30 FPS</td><td class="mono">SetTargetFPS(30);</td></tr>
+    <tr><td><kbd>G</kbd></td><td>Modo turbo: limite de 1.000.000 FPS (sem trava)</td><td class="mono">SetTargetFPS(1000000);</td></tr>
+    <tr><td>🖱️ botão esquerdo</td><td>Pinta a célula sob o mouse como viva (1)</td><td class="mono">tab.grid[linha][coluna] = 1;</td></tr>
+    <tr><td>🖱️ botão direito</td><td>Apaga a célula sob o mouse (0)</td><td class="mono">tab.grid[linha][coluna] = 0;</td></tr>
+    <tr><td><kbd>ESC</kbd> / ✕</td><td>Fecha a janela (fim do loop)</td><td class="mono">while (!WindowShouldClose())</td></tr>
+  </table>
+</section>
+
+<!-- ===================== DETALHES ===================== -->
+<section id="detalhes">
+  <h2><span class="n">8.</span> Detalhes sutis (e pequenos bugs) do código</h2>
+  <p class="sub">Coisas que só aparecem quando a gente lê com calma — algumas são recursos, outras são armadilhas.</p>
+
+  <div class="quirk"><h4>🎨 O <code>++</code> faz as cores mudarem</h4>
+  <p>Em <code>Atualiza()</code>, sobrevivência e reprodução usam <code>grid[i][j]++</code> e não <code>= 1</code>.
+     Uma célula que nasce vale 1 (vermelho); se sobrevive, vira 2 (laranja), depois 3 (amarelo)… e assim por diante
+     até estourar no <code>default</code> da <code>CorCelula()</code>. Na prática a cor mostra
+     <b>há quantas gerações a célula está "feliz"</b>. Atenção: células que já valem 2 e recebem <code>++</code>
+     passam a ser contadas como vivas normalmente, mas o valor não é mais "tempo de vida exato" — é só um contador que sobe.</p></div>
+
+  <div class="quirk"><h4>🌊 Bordas sempre morrem</h4>
+  <p>Por causa do <code>if</code> da linha 87 do <code>grid.cpp</code>, células na borda têm
+     <code>Vizinhos() == 0</code> → caem na regra de solidão → <code>grid = 0</code>. Ou seja, o tabuleiro se
+     "recolhe" a cada geração: é como se houvesse um mar de células mortas em volta. Padrões que encostam na borda morrem.</p></div>
+
+  <div class="quirk"><h4>📦 <code>Copia()</code> ignora os próprios parâmetros</h4>
+  <p>A assinatura recebe <code>linhasoriginal</code> e <code>linhasalvo</code>, mas os laços são fixos em
+     <code>100</code> — os parâmetros são mortos. Funciona porque a matriz é sempre <code>[100][100]</code>, mas
+     se um dia você trocar o tamanho da grade, esse método vai copiar a quantidade errada.</p></div>
+
+  <div class="quirk"><h4>⏱️ <code>UpFPS()</code> mede o FPS errado</h4>
+  <p><code>int fps = GetFPS(); fps += 10;</code> usa o FPS <i>medido</i>, não o limite. Como o FPS medido costuma
+     ficar abaixo ou oscilar em relação ao limite, apertar <kbd>D</kbd> várias vezes dá saltos estranhos (às vezes o
+     jogo até desacelera). O ideal seria guardar uma variável de "limite alvo" e incrementar nela.</p></div>
+
+  <div class="quirk"><h4>🕳️ Bloco vazio do <kbd>TAB</kbd></h4>
+  <p>As linhas 19–21 do <code>main.cpp</code> têm um <code>if (IsKeyDown(KEY_TAB)) {}</code> sem nada dentro —
+     código morto, provavelmente o começo de uma funcionalidade que ficou pela metade.</p></div>
+
+  <div class="quirk"><h4>🎲 <code>Aleatorio()</code> recria o gerador a cada célula</h4>
+  <p>Chamar <code>random_device</code> + <code>uniform_int_distribution</code> 10.000 vezes por tabuleiro funciona,
+     mas desperdiça tempo criando objetos novos. O mais comum é criar o gerador <b>uma vez</b> (por exemplo, como
+     atributo estático ou variável <code>static</code>) e só reaproveitar a distribuição.</p></div>
+
+  <div class="quirk"><h4>🖱️ Mouse pode "furar" a janela?</h4>
+  <p>Não aqui: a janela tem exatamente 800×800 e a grade ocupa tudo, então <code>linha = y / 8</code> vai de 0 a 99
+     sem risco de estourar. Mas se a janela fosse redimensionável, seria necessário um limite
+     (<code>min(linha, 99)</code>) para não escrever fora da matriz.</p></div>
+
+  <div class="quirk"><h4>♻️ Estrutura do programa (POO)</h4>
+  <p><b>grid.hpp</b> = "contrato" da classe (declaração); <b>grid.cpp</b> = implementação; <b>main.cpp</b> = só o laço
+     e a interface. Tudo é <code>public</code>, então a classe confia totalmente no quem-chama — num exercício de POO
+     valeria tornar <code>grid</code> privado e expor métodos como <code>setCelula(linha, coluna, valor)</code>.</p></div>
+</section>
+
+</main>
+
+<footer>
+  Conway's Game — explicação interativa gerada a partir de <span class="mono">main.cpp</span>,
+  <span class="mono">grid.hpp</span> e <span class="mono">grid.cpp</span>.<br>
+  O simulador desta página é uma reimplementação fiel do algoritmo original (inclusive as bordas e o <code>++</code>).
+</footer>
+
+<script>
+/* ================================================================
+   1. CÓDIGO-FONTE
+================================================================ */
+const SRC = {};
+SRC.main = `#include <iostream>
+#include <raylib.h>
+#include "grid.hpp"
+#include <random>
+using namespace std;
+
+int main () {
+
+    const int comprimento_janela = 800, altura_janela = 800;
+    InitWindow(comprimento_janela, altura_janela, "Conway's Game");
+    SetTargetFPS(30);
+    
+    bool pause = 1;
+    bool maxfps = 0;
+    Grid tab = Grid();
+
+    while (!WindowShouldClose()) {
+        
+        if(IsKeyDown(KEY_TAB)) {
+            
+        }
+        
+        if(!pause) tab.Atualiza();
+        if(IsKeyPressed(KEY_R)) tab.Inicial();
+        if(IsKeyPressed(KEY_B)) tab.Inicializa();
+        if(IsKeyPressed(KEY_RIGHT)) tab.Atualiza();
+        if(IsKeyDown(KEY_UP)) tab.Atualiza();
+        pause = IsKeyPressed(KEY_SPACE) ? (!pause) : (pause); 
+
+        // FPS
+        if(IsKeyDown(KEY_D)) tab.UpFPS();
+        if(IsKeyDown(KEY_S)) tab.DownFPS();
+        if(IsKeyPressed(KEY_THREE)) SetTargetFPS(30);
+        maxfps = IsKeyPressed(KEY_G) ? (!maxfps) : (maxfps);
+        if(maxfps) {
+            SetTargetFPS(1000000);
+        }
+        else {
+            SetTargetFPS(30);
+        }
+
+
+        //Mouse
+        if(IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            Vector2 posicaoMouse = GetMousePosition();
+            int linha = posicaoMouse.y / tab.quadrado;
+            int coluna = posicaoMouse.x / tab.quadrado;
+            tab.grid[linha][coluna] = 1;
+        }
+        if(IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) {
+            Vector2 posicaoMouse = GetMousePosition();
+            int linha = posicaoMouse.y / tab.quadrado;
+            int coluna = posicaoMouse.x / tab.quadrado;
+            tab.grid[linha][coluna] = 0;
+        }
+
+        BeginDrawing();
+            ClearBackground({10, 10, 10, 255});
+            tab.Desenha();
+            DrawText(TextFormat("%d", tab.geracao), 10, 10, 15, WHITE);
+            DrawText(TextFormat("FPS: %d", GetFPS()), 10, 25, 15, WHITE);
+        EndDrawing();
+
+    }
+    
+    CloseWindow();
+}`;
+
+SRC.hpp = `#pragma once
+#include <iostream>
+#include <raylib.h>
+#include <random>
+
+class Grid {
+    public:
+        int quadrado = 8;
+        float largura = 800, altura = 800;
+        int grid[100][100];
+        int geracao = 0;
+        Grid();
+        void Inicializa();
+        void Print();
+        void Copia(int matrizoriginal[][100], int linhasoriginal, int matrizalvo[][100], int linhasalvo);
+        void Desenha();
+        bool Aleatorio();
+        void Inicial();
+        void Atualiza();
+        int Vizinhos(int matriz[][100], int numerolinhas, int linha, int coluna);
+        Color CorCelula(int celula);
+        void UpFPS();
+        void DownFPS();
+};`;
+
+SRC.cpp = `#include "grid.hpp"
+#include <iostream>
+#include <raylib.h>
+#include <random>
+
+using namespace std;
+
+Grid::Grid() {
+    Inicializa();
+    Inicial();
+}
+
+void Grid::Inicializa() {
+    for(int i = 0; i < altura/quadrado; i++) {
+        for(int j = 0; j < largura/quadrado; j++) {
+            grid[i][j] = 0;
+        }
+    }
+    geracao = 0;
+}
+
+void Grid::Print() {
+    for(int i = 0; i < altura/quadrado; i++) {
+        for(int j = 0; j < largura/quadrado; j++) {
+            cout << grid[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+void Grid::Desenha() {
+    for(int i = 0; i < altura/quadrado; i++) {
+        for(int j = 0; j < largura/quadrado; j++) {
+            DrawRectangle(j * quadrado, i * quadrado, quadrado-1, quadrado-1, CorCelula(grid[i][j]));
+        }
+    }
+}
+
+bool Grid::Aleatorio() {
+    std::random_device rd;
+    std::uniform_int_distribution<int> dist(0,1);
+    return dist(rd);
+}
+
+void Grid::Inicial() {
+    for(int i = 0; i < altura/quadrado; i++) {
+        for(int j = 0; j < largura/quadrado; j++) {
+            grid[i][j] = Aleatorio();
+        }
+    }
+    geracao = 0;
+}
+
+void Grid::Copia(int matrizoriginal[][100], int linhasoriginal, int matrizalvo[][100], int linhasalvo) {
+    for (int i = 0; i < 100; ++i) {
+        for (int j = 0; j < 100; ++j) {
+            matrizalvo[i][j] = matrizoriginal[i][j];
+        }
+    }
+}
+
+void Grid::Atualiza() {
+    int proxima[100][100];
+    Copia(grid, 100, proxima, 100);
+    for(int i = 0; i < altura/quadrado; i++) {
+        for(int j = 0; j < largura/quadrado; j++) {
+            int vizinhos = Vizinhos(proxima, 100, i, j);
+            if (vizinhos < 2) {
+                grid[i][j] = 0; // Solidão
+            }
+            else if (vizinhos > 3) {
+                grid[i][j] = 0; // Superpopulação
+            }
+            else if (vizinhos == 3) {
+                grid[i][j]++; // Reprodução
+            }
+            else if (proxima[i][j] > 0 and vizinhos == 2) {
+                grid[i][j]++; // Sobrevivência
+            }
+        }
+    }
+    geracao++;
+}
+
+int Grid::Vizinhos(int matriz[][100], int numerolinhas, int linha, int coluna) {
+    int contador = 0;
+    if (!(linha-1<0 or linha+1>99 or coluna-1<0 or coluna+1>99)){
+        if (matriz[linha-1][coluna-1] > 0) contador++;
+        if (matriz[linha-1][coluna] > 0) contador++;
+        if (matriz[linha-1][coluna+1] > 0) contador++;
+        if (matriz[linha][coluna-1] > 0) contador++;
+        if (matriz[linha][coluna+1] > 0) contador++;
+        if (matriz[linha+1][coluna-1] > 0) contador++;
+        if (matriz[linha+1][coluna] > 0) contador++;
+        if (matriz[linha+1][coluna+1] > 0) contador++;
+    }
+    return contador;
+}
+
+Color Grid::CorCelula(int celula) {
+    switch (celula) {
+        case -1: return {10,10,10,255};
+        case 0: return BLACK;
+        case 1: return RED;
+        case 2: return ORANGE;
+        case 3: return YELLOW;
+        case 4: return GREEN;
+        case 5: return DARKGREEN;
+        case 6: return BLUE;
+        case 7: return DARKBLUE;
+        
+        default: return {0, 41, 55, 255};
+    }
+}
+
+void Grid::UpFPS() {
+    int fps = GetFPS();
+    fps+=10;
+    SetTargetFPS(fps);
+}
+
+void Grid::DownFPS() {
+    int fps = GetFPS();
+    fps-=10;
+    SetTargetFPS(fps);
+}`;
+
+/* ================================================================
+   2. ANOTAÇÕES POR LINHA
+================================================================ */
+const NOTES = {
+main: {
+  1:"Inclui <code>&lt;iostream&gt;</code> — usada por hábito: o programa gráfico não imprime nada no console (o desenho é feito pela raylib).",
+  2:"Inclui a <b>raylib</b>: biblioteca que cria a janela, desenha, e lê teclado e mouse.",
+  3:"Inclui <code>grid.hpp</code> — o cabeçalho da <b>sua classe Grid</b>, onde está toda a lógica do jogo.",
+  4:"<code>&lt;random&gt;</code> está aqui em main, mas o sorteio de verdade acontece em <code>Grid::Aleatorio()</code> (grid.cpp).",
+  7:"Função <code>main()</code> — ponto de entrada do programa C++.",
+  9:"Define o tamanho da janela: <b>800 × 800 pixels</b> (que é exatamente o tamanho da grade: 100 células × 8 px).",
+  10:"Cria a janela com a raylib e define o título exibido na barra.",
+  11:"<code>SetTargetFPS(30)</code> limita o programa a <b>30 quadros por segundo</b> — no máximo 30 gerações por segundo.",
+  13:"<code>pause = 1</code>: o jogo <b>começa pausado</code> — dá tempo de desenhar o padrão antes de apertar espaço.",
+  14:"<code>maxfps</code>: flag do modo turbo, ligada pela tecla G.",
+  15:"Cria o objeto <code>tab</code> da classe Grid. O construtor já roda <code>Inicializa()</code> + <code>Inicial()</code>, então o jogo já começa com um tabuleiro aleatório.",
+  17:"<b>Game loop</b>: o laço <code>while</code> que repete a cada quadro enquanto a janela não for fechada (ESC ou ✕).",
+  19:"<code>if (IsKeyDown(KEY_TAB)) {}</code> — <b>bloco vazio</b>: não faz nada. É código morto (provavelmente uma funcionalidade começada e não concluída).",
+  23:"Se <b>não</b> estiver pausado, avança uma geração chamando <code>tab.Atualiza()</code> — 1 vez por quadro (ou seja, até 30× por segundo).",
+  24:"Tecla <kbd>R</kbd>: novo tabuleiro aleatório via <code>Inicial()</code>. A geração volta a 0.",
+  25:"Tecla <kbd>B</kbd>: tabuleiro zerado via <code>Inicializa()</code> (tudo morto) — útil para começar um padrão do zero.",
+  26:"Tecla <kbd>→</kbd>: avança <b>exatamente 1 geração</b> — modo passo a passo manual.",
+  27:"Tecla <kbd>↑</kbd>: como usa <code>IsKeyDown</code>, atualiza <b>toda vez que estiver segurada</b> — avanço rápido.",
+  28:"Tecla <kbd>espaço</kbd> alterna o pause usando um <b>operador ternário</b>: se a tecla foi pressionada, inverte <code>pause</code>; senão, mantém.",
+  31:"Tecla <kbd>D</kbd>: chama <code>UpFPS()</code> para tentar aumentar 10 FPS.",
+  32:"Tecla <kbd>S</kbd>: chama <code>DownFPS()</code> para diminuir 10 FPS.",
+  33:"Tecla <kbd>3</kbd>: volta o limite para 30 FPS.",
+  34:"Tecla <kbd>G</kbd> alterna o modo turbo (mesmo esquema ternário do pause).",
+  35:"No turbo: <code>SetTargetFPS(1000000)</code> remove na prática a trava de velocidade — o jogo roda o mais rápido que o PC aguentar.",
+  38:"Fora do turbo, o limite volta a ser 30 FPS a cada quadro.",
+  44:"<b>Botão esquerdo do mouse</b> pressionado → pintar célula viva.",
+  45:"<code>GetMousePosition()</code> devolve a posição do mouse <b>em pixels</b>.",
+  46:"Conversão pixel → <b>linha</b>: divisão inteira por 8 (<code>tab.quadrado</code>). Ex.: y = 57 → linha 7.",
+  47:"Mesma conversão para a <b>coluna</b> (eixo x).",
+  48:"Escreve <b>1</b> (viva) na célula clicada — assim você desenha o padrão. Note o acesso direto a <code>tab.grid</code> (tudo é público).",
+  50:"<b>Botão direito do mouse</b> → apagar célula.",
+  53:"Mesma conversão pixel → índice do botão esquerdo.",
+  54:"Escreve <b>0</b> (morta) — apaga a célula.",
+  57:"<code>BeginDrawing()</code> — início do quadro de desenho da raylib.",
+  58:"Pinta toda a janela de preto-escuro <code>{10,10,10}</code> (limpa o quadro anterior).",
+  59:"<code>tab.Desenha()</code> desenha os 100×100 retângulos da grade.",
+  60:"Mostra o <b>contador de gerações</b> no canto superior esquerdo.",
+  61:"Mostra os <b>FPS reais</b> logo abaixo da geração.",
+  62:"<code>EndDrawing()</code> — troca os buffers e apresenta a imagem na tela.",
+  66:"<code>CloseWindow()</code> — fecha a janela e libera os recursos (fim do programa)."
+},
+hpp: {
+  1:"<code>#pragma once</code>: guarda de inclusão — evita que o cabeçalho seja processado duas vezes.",
+  2:"<code>&lt;iostream&gt;</code> é usado pelo método <code>Print()</code> (depuração no console).",
+  3:"<code>&lt;raylib.h&gt;</code> porque a classe usa tipos da raylib: <code>Color</code>, <code>DrawRectangle</code>, <code>GetFPS</code>…",
+  4:"<code>&lt;random&gt;</code> é necessário para o método <code>Aleatorio()</code>.",
+  6:"Declara a <b>classe Grid</b> — o 'modelo' do tabuleiro (aqui está o lado declarativo da POO).",
+  8:"<code>quadrado = 8</code>: tamanho de cada célula <b>em pixels</b>. 800 / 8 = <b>100 células por lado</b>.",
+  9:"Dimensões do tabuleiro em pixels. Como é <code>float</code>, as divisões <code>altura/quadrado</code> geram 100 inteiras.",
+  10:"<b>A matriz do jogo</b>: 100×100 inteiros. 0 = morta, &gt;0 = viva (o valor também guarda há quantas gerações ela sobreviveu).",
+  11:"Contador de <b>gerações</b>, exibido na tela.",
+  12:"Protótipo do <b>construtor</b> — executado quando o objeto é criado (<code>Grid tab = Grid();</code>).",
+  13:"<code>Inicializa()</code>: zera o tabuleiro.",
+  14:"<code>Print()</code>: imprime a matriz no terminal (depuração, não usada na versão gráfica).",
+  15:"<code>Copia()</code>: copia uma matriz 100×100 para outra — usada para guardar o estado antes da atualização.",
+  16:"<code>Desenha()</code>: desenha a grade na janela.",
+  17:"<code>Aleatorio()</code>: sorteia 0 ou 1.",
+  18:"<code>Inicial()</code>: preenche o tabuleiro com valores aleatórios.",
+  19:"<b><code>Atualiza()</code></b>: aplica as regras de Conway e avança 1 geração — o coração do jogo.",
+  20:"<code>Vizinhos()</code>: conta as células vizinhas vivas de uma célula.",
+  21:"<code>CorCelula()</code>: traduz o valor da célula em uma cor.",
+  22:"<code>UpFPS()</code>: aumenta o limite de FPS.",
+  23:"<code>DownFPS()</code>: diminui o limite de FPS.",
+  24:"Fecha o <code>class Grid { ... };</code> — nota: todos os membros estão em <code>public:</code>, ou seja, <b>não há encapsulamento</b> ainda."
+},
+cpp: {
+  1:"Inclui o próprio cabeçalho — obrigatório, para o compilador conhecer a classe que está sendo implementada.",
+  6:"<code>using namespace std;</code> permite usar <code>cout</code>, <code>random_device</code> etc. sem escrever <code>std::</code> na frente.",
+  8:"<b>Construtor</b> da classe: toda vez que um <code>Grid</code> é criado, ele executa essas duas linhas.",
+  9:"1ª etapa: <code>Inicializa()</code> — limpa tudo.",
+  10:"2ª etapa: <code>Inicial()</code> — sorteia o tabuleiro inicial (por isso o jogo já começa 'vivo').",
+  13:"<code>Inicializa()</code>: percorre todas as linhas — <code>altura/quadrado</code> = 800/8 = 100 iterações.",
+  15:"<code>grid[i][j] = 0</code>: marca a célula como morta.",
+  16:"Fecha o laço das colunas.",
+  19:"Zera também o <b>contador de geração</b> (novo tabuleiro = nova partida).",
+  22:"<code>Print()</code>: método de <b>depuração</b> — imprime a matriz inteira no terminal, célula por célula.",
+  27:"<code>cout &lt;&lt; endl</code> quebra a linha no console a cada nova linha da matriz.",
+  31:"<code>Desenha()</code>: varre a matriz e desenha um retângulo por célula.",
+  34:"<code>DrawRectangle(x, y, largura, altura, cor)</code>: x = coluna×8, y = linha×8. O <code>quadrado-1</code> deixa <b>1 px de espaço</b> entre as células — é o que forma as linhas da grade. A cor vem de <code>CorCelula(grid[i][j])</code>.",
+  39:"<code>Aleatorio()</code>: cria um gerador (<code>random_device</code>) e sorteia 0 ou 1 — 50% de chance cada.",
+  41:"<code>uniform_int_distribution&lt;int&gt; dist(0,1)</code>: distribuição uniforme entre 0 e 1.",
+  45:"<code>Inicial()</code>: tabuleiro 100% aleatório — cada célula vira 0 ou 1.",
+  48:"Chama <code>Aleatorio()</code> para cada uma das 10.000 células.",
+  51:"Nova partida → <code>geracao = 0</code>.",
+  54:"<code>Copia()</code>: copia <code>matrizoriginal</code> para <code>matrizalvo</code>, célula por célula.",
+  55:"⚠️ Os laços são <b>fixos em 100</b>: os parâmetros <code>linhasoriginal</code>/<code>linhasalvo</code> são <b>ignorados</b> (funciona só porque a matriz é sempre [100][100]).",
+  62:"<b><code>Atualiza()</code> — o coração do jogo.</b> Aplica as regras de Conway para calcular a próxima geração.",
+  63:"<code>proxima[100][100]</code>: matriz auxiliar que guardará o tabuleiro <b>antes</b> das mudanças.",
+  64:"<code>Copia(grid, 100, proxima, 100)</code>: cria o <b>snapshot</b>. Sem ele, a mudança de uma célula seria lida indevidamente pelos vizinhos calculados depois.",
+  66:"Os vizinhos serão lidos de <code>proxima</code> (estado antigo), garantindo que todas as células decidam com base no <b>mesmo</b> instante.",
+  67:"Conta os vizinhos vivos da célula (i, j) usando o snapshot.",
+  68:"<b>Solidão</b>: menos de 2 vizinhos →",
+  69:"…a célula morre (<code>grid[i][j] = 0</code>).",
+  71:"<b>Superpopulação</b>: mais de 3 vizinhos →",
+  72:"…a célula morre (<code>grid[i][j] = 0</code>).",
+  74:"<b>Reprodução</b>: exatamente 3 vizinhos →",
+  75:"…<code>grid[i][j]++</code>. Se estava morta (0) nasce (1); mas se já estava viva, o valor <b>sobe</b> (1→2) e a cor muda — consequência do <code>++</code>.",
+  77:"<b>Sobrevivência</b>: estava viva no snapshot (<code>proxima[i][j] &gt; 0</code>) e tem 2 vizinhos →",
+  78:"…<code>grid[i][j]++</code> — ela continua viva e o valor (e a cor) também sobe.",
+  80:"Nenhum <code>else</code>: uma célula <b>morta com 2 vizinhos</b> não entra em nenhuma regra — e permanece morta (comportamento correto de Conway).",
+  82:"Fim do laço → <code>geracao++</code>.",
+  85:"<code>Vizinhos()</code>: conta as células vivas ao redor de (linha, coluna) — a 'vizinhança de Moore'.",
+  87:"<b>Proteção de borda</b>: só entra no bloco se a célula estiver totalmente dentro da matriz. Se estiver na borda, o <code>if</code> é pulado e a função devolve <b>0</b> — ou seja, células de borda morrem de solidão na geração seguinte.",
+  88:"Vizinho superior-esquerdo: <code>matriz[linha-1][coluna-1]</code>.",
+  89:"Vizinho de cima.",
+  90:"Vizinho superior-direito.",
+  91:"Vizinho da esquerda.",
+  92:"Vizinho da direita.",
+  93:"Vizinho inferior-esquerdo.",
+  94:"Vizinho de baixo.",
+  95:"Vizinho inferior-direito.",
+  96:"Fecha o <code>if</code> de proteção de borda.",
+  97:"Devolve o total de vizinhos vivos.",
+  100:"<code>CorCelula()</code>: traduz o valor da célula em uma cor — é o 'termômetro' da geração.",
+  101:"<code>switch</code> em cima do valor da célula.",
+  102:"<code>-1</code>: fundo (usado raramente).",
+  103:"<code>0</code> = <b>preto</b> → célula morta.",
+  104:"<code>1</code> = <b>vermelho</b> → acabou de nascer / vive 1 geração.",
+  105:"<code>2</code> = laranja → sobreviveu mais um turno.",
+  106:"<code>3</code> = amarelo.",
+  107:"<code>4</code> = verde.",
+  108:"<code>5</code> = verde escuro.",
+  109:"<code>6</code> = azul.",
+  110:"<code>7</code> = azul escuro.",
+  113:"<code>default</code>: valores ≥ 8 viram um azul-petróleo <code>{0,41,55}</code> — sinal de que a célula está 'velha demais' na simulação.",
+  124:"<code>UpFPS()</code>: lê o FPS atual, soma 10 e manda a raylib usar esse novo limite.",
+  125:"⚠️ Usa <code>GetFPS()</code> (FPS <i>medido</i>), não o limite — por isso os ajustes com D/S dão saltos estranhos.",
+  130:"<code>DownFPS()</code>: mesma ideia, subtraindo 10."
+}};
+
+/* ================================================================
+   3. REALCE DE SINTAXE + EXPLORADOR DE CÓDIGO
+================================================================ */
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+const CPP_RE = /(\/\/[^\n]*)|(#[^\n]*)|("(?:[^"\\]|\\.)*")|('(?:[^'\\]|\\.)*')|\b(\d+(?:\.\d+)?f?)\b|\b(if|else|for|while|return|bool|int|float|void|char|switch|case|default|break|continue|class|public|private|protected|struct|const|true|false|and|or|not|using|namespace|new|this|auto|static|double|long|short)\b|\b([A-Za-z_]\w*)(?=\s*\()/g;
+function highlight(line){
+  let out='', last=0, m; CPP_RE.lastIndex=0;
+  while((m=CPP_RE.exec(line))!==null){
+    out += esc(line.slice(last,m.index));
+    const t = esc(m[0]);
+    if(m[1]) out += '<span class="c-com">'+t+'</span>';
+    else if(m[2]) out += '<span class="c-pre">'+t+'</span>';
+    else if(m[3]||m[4]) out += '<span class="c-str">'+t+'</span>';
+    else if(m[5]) out += '<span class="c-num">'+t+'</span>';
+    else if(m[6]) out += '<span class="c-kw">'+t+'</span>';
+    else out += '<span class="c-fn">'+t+'</span>';
+    last = CPP_RE.lastIndex;
+    if(m[0].length===0) CPP_RE.lastIndex++;
+  }
+  out += esc(line.slice(last));
+  return out;
+}
+const FILE_LABEL = {main:'main.cpp', hpp:'grid.hpp', cpp:'grid.cpp'};
+let curFile = 'main';
+function renderCode(f){
+  curFile = f;
+  const lines = SRC[f].split('\n');
+  const box = document.getElementById('codebox');
+  let html = '';
+  lines.forEach((ln,i)=>{
+    const has = NOTES[f] && NOTES[f][i+1];
+    html += '<div class="cl" data-l="'+(i+1)+'"'+(has?' style="border-left-color:#2a3b52"':'')+'>'
+          + '<span class="ln">'+(i+1)+'</span><span class="lc">'+(highlight(ln)||' ')+'</span></div>';
+  });
+  box.innerHTML = html;
+  box.scrollTop = 0;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on', b.dataset.f===f));
+  document.getElementById('note').innerHTML =
+    '<div class="head">'+FILE_LABEL[f]+'</div><h4>Clique em uma linha 👈</h4>'
+    +'<p>As linhas com uma tarja escura têm anotação. Clique para ler o que aquela parte faz.</p>'
+    +'<p class="hint">Dica: no <code>grid.cpp</code>, comece pelas linhas 62–83 (<code>Atualiza()</code>).</p>';
+}
+document.getElementById('tabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(b) renderCode(b.dataset.f);
+});
+document.getElementById('codebox').addEventListener('click', e=>{
+  const row = e.target.closest('.cl'); if(!row) return;
+  document.querySelectorAll('#codebox .cl').forEach(c=>c.classList.remove('sel'));
+  row.classList.add('sel');
+  const n = +row.dataset.l;
+  const txt = (NOTES[curFile]||{})[n];
+  const note = document.getElementById('note');
+  note.innerHTML = '<div class="head">'+FILE_LABEL[curFile]+' &middot; linha '+n+'</div>'
+    + '<h4>'+ (txt ? esc(SRC[curFile].split('\n')[n-1].trim()) + '</h4>' : 'Sem anotação específica</h4>')
+    + '<p>'+ (txt || 'Esta linha é parte do fluxo geral — leia a anotação das linhas vizinhas ou a seção correspondente desta página.') +'</p>';
+});
+renderCode('main');
+
+/* ================================================================
+   4. MOTOR DO JOGO (reimplementação fiel de Atualiza/Vizinhos/CorCelula)
+================================================================ */
+function corCelula(v){
+  switch(v){
+    case -1: return 'rgb(10,10,10)';
+    case 0:  return '#000000';
+    case 1:  return 'rgb(230,41,55)';    // RED (raylib)
+    case 2:  return 'rgb(255,161,0)';    // ORANGE
+    case 3:  return 'rgb(253,249,0)';    // YELLOW
+    case 4:  return 'rgb(0,228,48)';     // GREEN
+    case 5:  return 'rgb(0,117,44)';     // DARKGREEN
+    case 6:  return 'rgb(0,121,241)';    // BLUE
+    case 7:  return 'rgb(0,82,172)';     // DARKBLUE
+    default: return 'rgb(0,41,55)';      // default
+  }
+}
+const OFFS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function vizinhos(g,n,i,j){
+  // fiel ao grid.cpp linha 87: se a célula está na borda, o if do C++ é pulado → devolve 0
+  if(i-1<0 || i+1>n-1 || j-1<0 || j+1>n-1) return 0;
+  let c=0;
+  for(const [di,dj] of OFFS) if(g[(i+di)*n+(j+dj)]>0) c++;
+  return c;
+}
+function atualiza(g,n){
+  const prox = g.slice();           // Copia(grid, 100, proxima, 100)
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++){
+    const k=i*n+j, v=vizinhos(prox,n,i,j);
+    if(v<2) g[k]=0;                              // Solidão
+    else if(v>3) g[k]=0;                         // Superpopulação
+    else if(v===3) g[k]++;                       // Reprodução
+    else if(prox[k]>0 && v===2) g[k]++;          // Sobrevivência
+  }
+}
+function aleatorio(g){ for(let i=0;i<g.length;i++) g[i] = Math.random()<0.5?1:0; }
+function zerar(g){ g.fill(0); }
+function desenha(ctx,g,n,cell,opts){
+  opts=opts||{};
+  ctx.fillStyle='#0a0a0a'; ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  let vivas=0;
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++){
+    const v=g[i*n+j]; if(v>0) vivas++;
+    ctx.fillStyle=corCelula(v);
+    ctx.fillRect(j*cell,i*cell,cell-1,cell-1);
+  }
+  if(opts.hl!=null){
+    const hi=Math.floor(opts.hl/n), hj=opts.hl%n;
+    ctx.strokeStyle='#39d0d8'; ctx.lineWidth=2;
+    ctx.strokeRect(hj*cell+1,hi*cell+1,cell-3,cell-3);
+    // realça a vizinhança
+    ctx.strokeStyle='rgba(57,208,216,.35)'; ctx.lineWidth=1;
+    ctx.strokeRect((hj-1)*cell+1,(hi-1)*cell+1,cell*3-3,cell*3-3);
+  }
+  if(opts.borda){
+    ctx.strokeStyle='rgba(255,93,93,.8)'; ctx.lineWidth=3;
+    ctx.strokeRect(1.5,1.5,ctx.canvas.width-3,cell+2);
+    ctx.strokeRect(1.5,ctx.canvas.height-cell-5,ctx.canvas.width-3,cell+2);
+    ctx.strokeRect(1.5,1.5,cell+2,ctx.canvas.height-3);
+    ctx.strokeRect(ctx.canvas.width-cell-5,1.5,cell+2,ctx.canvas.height-3);
+  }
+  return vivas;
+}
+
+/* ---------------- 4a. mini-padrões ---------------- */
+const PATTERN_SEEDS = {
+  glider:  [[1,2],[2,3],[3,1],[3,2],[3,3]],
+  blinker: [[5,4],[5,5],[5,6]],
+  block:   [[4,4],[4,5],[5,4],[5,5]]
+};
+function makePattern(name,n,rand){
+  const g=new Int16Array(n*n);
+  if(rand){ aleatorio(g); return g; }
+  (PATTERN_SEEDS[name]||[]).forEach(([a,b])=>g[a*n+b]=1);
+  return g;
+}
+const minis=[];
+[['pat-glider','glider',false],['pat-blinker','blinker',false],
+ ['pat-block','block',false],['pat-random',null,true]].forEach(([id,name,rnd])=>{
+  const cv=document.getElementById(id), ctx=cv.getContext('2d');
+  const n=10, cell=16;
+  let g=makePattern(name,n,rnd), tick=0;
+  minis.push({ctx,step(){
+    atualiza(g,n); tick++;
+    if(tick>16 || (name==='glider' && tick>11)){ g=makePattern(name,n,rnd); tick=0; }
+    desenha(ctx,g,n,cell);
+  }});
+  desenha(ctx,g,n,cell);
+});
+setInterval(()=>minis.forEach(m=>m.step()), 320);
+
+/* ---------------- 4b. simulador principal ---------------- */
+const simCv=document.getElementById('sim'), simCtx=simCv.getContext('2d');
+const N=100, CELL=8;
+const S={grid:new Int16Array(N*N), pause:true, turbo:false, limit:30, gen:0,
+         hud:true, borda:false, acc:0, last:performance.now(), frames:0, fpsT:performance.now(), fps:0};
+aleatorio(S.grid);
+function simStep(){ atualiza(S.grid,N); S.gen++; }
+function simDraw(){
+  const vivas = desenha(simCtx,S.grid,N,CELL,{borda:S.borda});
+  if(S.hud){
+    simCtx.font='15px ui-monospace,Menlo,Consolas,monospace';
+    simCtx.fillStyle='rgba(10,13,18,.75)'; simCtx.fillRect(4,4,140,40);
+    simCtx.fillStyle='#ffffff';
+    simCtx.fillText(String(S.gen),10,21);
+    simCtx.fillText('FPS: '+S.fps,10,37);
+  }
+  document.getElementById('s-gen').textContent=S.gen;
+  document.getElementById('s-live').textContent=vivas;
+  document.getElementById('s-limit').textContent=S.turbo?'∞ (turbo)':S.limit;
+  document.getElementById('s-fps').textContent=S.fps;
+}
+function simLoop(t){
+  const dt=t-S.last; S.last=t;
+  S.frames++;
+  if(t-S.fpsT>=500){ S.fps=Math.round(S.frames*1000/(t-S.fpsT)); S.frames=0; S.fpsT=t; }
+  if(!S.pause || S.heldStep){ if(S.heldStep){simStep(); S.heldStep=false;} else {
+      S.acc+=dt; const iv=1000/S.limit;
+      let guard=0; while(S.acc>=iv && guard<60){ simStep(); S.acc-=iv; guard++; }
+    } }
+  simDraw();
+  requestAnimationFrame(simLoop);
+}
+S.heldStep=false;
+requestAnimationFrame(simLoop);
+
+function paint(ev){
+  const r=simCv.getBoundingClientRect();
+  const x=(ev.clientX-r.left)*(simCv.width/r.width);
+  const y=(ev.clientY-r.top)*(simCv.height/r.height);
+  const linha=Math.floor(y/CELL), coluna=Math.floor(x/CELL);
+  if(linha<0||coluna<0||linha>=N||coluna>=N) return;
+  S.grid[linha*N+coluna] = (ev.buttons & 2) ? 0 : ((ev.buttons & 1) ? 1 : 0);
+}
+simCv.addEventListener('pointerdown',e=>{ simCv.focus(); simCv.setPointerCapture(e.pointerId); paint(e); e.preventDefault(); });
+simCv.addEventListener('pointermove',e=>{ if(e.buttons) paint(e); });
+simCv.addEventListener('contextmenu',e=>e.preventDefault());
+
+document.getElementById('btn-play').onclick=function(){
+  S.pause=!S.pause; this.textContent = S.pause?'▶ Rodar':'⏸ Pausar';
+};
+document.getElementById('btn-step').onclick=()=>simStep();
+document.getElementById('btn-rand').onclick=()=>{ aleatorio(S.grid); S.gen=0; };
+document.getElementById('btn-clear').onclick=()=>{ zerar(S.grid); S.gen=0; };
+document.getElementById('c-hud').onchange=e=>S.hud=e.target.checked;
+document.getElementById('c-borda').onchange=e=>S.borda=e.target.checked;
+document.getElementById('r-fps').oninput=e=>{ S.limit=+e.target.value; S.turbo=false; };
+
+const held=new Set();
+simCv.addEventListener('keydown',e=>{
+  const k=e.key;
+  if([' ','ArrowUp','ArrowRight'].includes(k)) e.preventDefault();
+  if(k===' '){ S.pause=!S.pause; document.getElementById('btn-play').textContent=S.pause?'▶ Rodar':'⏸ Pausar'; }
+  else if(k==='r'||k==='R'){ aleatorio(S.grid); S.gen=0; }
+  else if(k==='b'||k==='B'){ zerar(S.grid); S.gen=0; }
+  else if(k==='ArrowRight'){ simStep(); }
+  else if(k==='d'||k==='D'){ S.limit=Math.min(120,S.limit+10); S.turbo=false; document.getElementById('r-fps').value=Math.min(60,S.limit); }
+  else if(k==='s'||k==='S'){ S.limit=Math.max(1,S.limit-10); S.turbo=false; document.getElementById('r-fps').value=S.limit; }
+  else if(k==='g'||k==='G'){ S.turbo=!S.turbo; if(S.turbo) S.limit=1000000; else S.limit=30; document.getElementById('r-fps').value=30; }
+  else if(k==='3'){ S.turbo=false; S.limit=30; document.getElementById('r-fps').value=30; }
+  else if(k==='ArrowUp'){ held.add('up'); }
+});
+simCv.addEventListener('keyup',e=>held.delete('up'));
+setInterval(()=>{ if(held.has('up') && document.activeElement===simCv) simStep(); },33);
+
+/* ================================================================
+   5. PASSO A PASSO DE Atualiza()
+================================================================ */
+const WN=6, WCELL=44;
+const wGridCv=document.getElementById('w-grid'), wGridCtx=wGridCv.getContext('2d');
+const wSnapCv=document.getElementById('w-snap'), wSnapCtx=wSnapCv.getContext('2d');
+const W={g:new Int16Array(WN*WN), snap:null, phase:'idle', idx:0, gen:0, hl:null};
+function wSetPattern(name){
+  W.g.fill(0); W.gen=0;
+  if(name==='random') aleatorio(W.g);
+  else if(name==='glider'){ [[1,2],[2,3],[3,1],[3,2],[3,3]].forEach(([a,b])=>W.g[a*WN+b]=1); }
+  else if(name==='blinker'){ [[3,2],[3,3],[3,4]].forEach(([a,b])=>W.g[a*WN+b]=1); }
+  resetWalk();
+}
+function resetWalk(){ W.phase='idle'; W.idx=0; W.snap=null; W.hl=null;
+  document.getElementById('w-log').innerHTML='';
+  setMsg('Clique em <b>👉 Próximo passo</b> para executar <code>Atualiza()</code> uma instrução de cada vez. '
+       + 'Você também pode <b>cliquear nas células</b> do quadro da esquerda para montar um caso.');
+  drawWalk();
+}
+function setMsg(html){ document.getElementById('w-msg').innerHTML=html; }
+function addLog(html){
+  const l=document.getElementById('w-log');
+  const d=document.createElement('div'); d.innerHTML=html;
+  l.prepend(d);
+  while(l.children.length>60) l.removeChild(l.lastChild);
+}
+function walkDrawGrid(){ desenha(wGridCtx,W.g,WN,WCELL,{hl:W.hl}); }
+function walkDrawSnap(){ desenha(wSnapCtx,W.snap||new Int16Array(WN*WN),WN,WCELL,{hl:W.hl}); }
+function drawWalk(){ walkDrawGrid(); walkDrawSnap(); }
+function wNext(){
+  if(W.phase==='idle'){
+    W.snap=W.g.slice();            // Copia(grid, 100, proxima, 100)
+    W.phase='copy'; W.idx=0; W.hl=null;
+    setMsg('<b>1) Copia(grid, 100, proxima, 100)</b> — o estado atual foi congelado em <code>proxima</code> (quadro da direita). '
+         + 'Todas as decisões daqui para frente serão tomadas lendo <b>esse snapshot</b>, nunca o <code>grid</code> que está sendo modificado.');
+    addLog('Copia: snapshot criado (matriz 6×6 nesta demo, 100×100 no original).');
+    drawWalk(); return;
+  }
+  if(W.phase==='copy'){ W.phase='cells'; }
+  if(W.phase==='cells'){
+    if(W.idx>=WN*WN){
+      W.phase='done'; W.gen++; W.hl=null;
+      setMsg('<b>Fim do laço duplo → <span class="ok">geracao++</span></b> = geração '+W.gen+'. '
+           + 'Clique em ↺ Reiniciar (ou escolha um padrão) para rodar de novo.');
+      addLog('geracao = '+W.gen);
+      drawWalk(); return;
+    }
+    const k=W.idx, i=Math.floor(k/WN), j=k%WN;
+    const antes=W.g[k], v=vizinhos(W.snap,WN,i,j);
+    const snapVal=W.snap[k];
+    let novo=antes, regra='', cls='';
+    if(v<2){ novo=0; regra='<span class="die">Solidão</span> (vizinhos &lt; 2) → grid['+i+']['+j+'] = 0'; }
+    else if(v>3){ novo=0; regra='<span class="die">Superpopulação</span> (vizinhos &gt; 3) → grid['+i+']['+j+'] = 0'; }
+    else if(v===3){ novo=antes+1; regra='<span class="ok">Reprodução</span> (vizinhos == 3) → grid['+i+']['+j+']++ = '+novo; }
+    else if(snapVal>0 && v===2){ novo=antes+1; regra='<span class="ok">Sobrevivência</span> (viva + 2 vizinhos) → grid['+i+']['+j+']++ = '+novo; }
+    else { regra='Morta com 2 vizinhos → nenhuma regra se aplica, permanece 0'; }
+    W.g[k]=novo; W.hl=k;
+    setMsg('<b>2) célula ['+i+']['+j+']</b> — valor antigo: <code>'+antes+'</code> · '
+         + 'vizinhos em <code>proxima</code>: <b>'+v+'</b> → '+regra
+         + ' &nbsp;<span style="color:var(--muted)">(índice '+(W.idx+1)+' de '+(WN*WN)+')</span>');
+    addLog('['+i+']['+j+'] val='+antes+' viz='+v+' → '+regra.replace(/<[^>]+>/g,''));
+    W.idx++;
+    drawWalk();
+  }
+}
+document.getElementById('w-next').onclick=wNext;
+document.getElementById('w-reset').onclick=resetWalk;
+document.querySelectorAll('#walk-btns [data-pat]').forEach(b=>b.onclick=()=>wSetPattern(b.dataset.pat));
+wGridCv.addEventListener('pointerdown',e=>{
+  if(W.phase!=='idle' && W.phase!=='done') { return; }
+  const r=wGridCv.getBoundingClientRect();
+  const x=(e.clientX-r.left)*(wGridCv.width/r.width);
+  const y=(e.clientY-r.top)*(wGridCv.height/r.height);
+  const i=Math.floor(y/WCELL), j=Math.floor(x/WCELL);
+  if(i<0||j<0||i>=WN||j>=WN) return;
+  W.g[i*WN+j] = W.g[i*WN+j]>0 ? 0 : 1;
+  drawWalk();
+});
+wSetPattern('glider');
+
+/* ================================================================
+   6. EXPLORADOR DE VIZINHOS
+================================================================ */
+const nbState=new Set([0,2,6,8]);
+function nbRender(){
+  const borda=document.getElementById('nb-borda').checked;
+  document.querySelectorAll('#nbgrid button[data-k]').forEach(b=>{
+    b.classList.toggle('alive', nbState.has(+b.dataset.k));
+    b.textContent = nbState.has(+b.dataset.k) ? '1' : '0';
+  });
+  const count = borda ? 0 : nbState.size;
+  document.getElementById('nb-count').textContent=count;
+  let verdict;
+  if(borda){
+    verdict = '<span style="color:var(--red)">A célula está na borda → o <code>if</code> da linha 87 não executa e <b>Vizinhos() devolve 0</b>, mesmo que haja vizinhos vivos. Resultado: <b>solidão → morre</b>.</span>';
+  } else if(count<2){
+    verdict = '<span style="color:var(--red)">'+count+' &lt; 2 → Solidão: a célula morre (grid = 0).</span>';
+  } else if(count>3){
+    verdict = '<span style="color:var(--red)">'+count+' &gt; 3 → Superpopulação: a célula morre (grid = 0).</span>';
+  } else if(count===3){
+    verdict = '<span style="color:#5ce38a">'+count+' == 3 → Reprodução: grid++ (nasce / valor sobe).</span>';
+  } else {
+    verdict = '<span style="color:#5ce38a">'+count+' == 2 → Sobrevivência se estava viva; se estava morta, nada acontece.</span>';
+  }
+  document.getElementById('nb-verdict').innerHTML=verdict;
+}
+document.getElementById('nbgrid').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-k]'); if(!b) return;
+  const k=+b.dataset.k; nbState.has(k)?nbState.delete(k):nbState.add(k); nbRender();
+});
+document.getElementById('nb-borda').onchange=nbRender;
+document.getElementById('nb-code').innerHTML = highlight(
+'int Grid::Vizinhos(int matriz[][100], int numerolinhas, int linha, int coluna) {\n'
++'    int contador = 0;\n'
++'    if (!(linha-1<0 or linha+1>99 or coluna-1<0 or coluna+1>99)){\n'
++'        if (matriz[linha-1][coluna-1] > 0) contador++;\n'
++'        if (matriz[linha-1][coluna]   > 0) contador++;\n'
++'        if (matriz[linha-1][coluna+1] > 0) contador++;\n'
++'        if (matriz[linha][coluna-1]   > 0) contador++;\n'
++'        if (matriz[linha][coluna+1]   > 0) contador++;\n'
++'        if (matriz[linha+1][coluna-1] > 0) contador++;\n'
++'        if (matriz[linha+1][coluna]   > 0) contador++;\n'
++'        if (matriz[linha+1][coluna+1] > 0) contador++;\n'
++'    }\n'
++'    return contador;\n'
++'}');
+nbRender();
+</script>
+</body>
+</html>
